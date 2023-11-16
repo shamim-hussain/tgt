@@ -1,0 +1,7 @@
+/models/*
+!/models/MODELS_WILL_BE_SAVED_HERE.txt
+/data/PCQM/*
+!/data/PCQM/PUT_DATA_HERE.txt
+__pycache__
+.ipynb_checkpoints
+.DS_Store
