@@ -4,7 +4,7 @@
 
 This is the official implementation of Triangular Attention which extends the **Edge-augmented Graph Transformer (EGT)** architecture as described in <https://arxiv.org/abs/2108.03348>, on the [OGB-LSC](https://ogb.stanford.edu/docs/lsc/) PCQM4Mv2 dataset. The code is based on the original implementation of EGT at <https://github.com/shamim-hussain/egt_pytorch>. 
 
-Triangular attention extends the pairwise attention in EGT to allow for 2 pairs sharing a common node to interact with each other, which is found to be beneficial for molecular property prediction. We employ a two-stage model with the same architecture. The first stage produces an estimation of pair-wise distances between atoms, which is then used by the second stage to predict the HOMO-LUMO gap. The training is carried out in three stages - (i) training of the distance predictor, (ii) pretraining of the gap predictor with noisy coordinates and (iii) fine-tuning of the gap predictor with predicted distances. For more information see the [Technical Report](Repord.pdf).
+Triangular attention extends the pairwise attention in EGT to allow for 2 pairs sharing a common node to interact with each other, which is found to be beneficial for molecular property prediction. We employ a two-stage model with the same architecture. The first stage produces an estimation of pair-wise distances between atoms, which is then used by the second stage to predict the HOMO-LUMO gap. The training is carried out in three stages - (i) training of the distance predictor, (ii) pretraining of the gap predictor with noisy coordinates and (iii) fine-tuning of the gap predictor with predicted distances. For more information see the [Technical Report](Report.pdf).
 
 ## Results
 
