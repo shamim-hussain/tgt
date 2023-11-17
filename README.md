@@ -11,7 +11,7 @@ Triangular attention extends the pairwise attention in EGT to allow for 2 pairs 
 Model            | Use RDKIT Coords |Dist. Pred. #layers | Gap Pred. #layers | #params | Metric         | Valid           | Test           |
 -----------------|------------------|--------------------|-------------------|---------|----------------|-----------------|----------------|
 EGT + Tri. Attn. |:x:               |       24           |        24         | 204M    | MAE            | 68.6 meV        | --             |
-EGT + Tri. Attn. |:white_check_mark:|       24           |        24         | 204M    | MAE            | 67.1 meV          | --             |
+EGT + Tri. Attn. |:white_check_mark:|       24           |        24         | 204M    | MAE            | 67.1 meV        | 68.3 meV       |
 
 ## Requirements
 
