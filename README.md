@@ -1,5 +1,7 @@
 # Edge-augmented Graph Transformer with Triangular Attention
-![banner](banner.svg)
+
+![banner](banner.png)
+
 ## Introduction
 
 This is the official implementation of Triangular Attention which extends the **Edge-augmented Graph Transformer (EGT)** architecture as described in <https://arxiv.org/abs/2108.03348>, on the [OGB-LSC](https://ogb.stanford.edu/docs/lsc/) PCQM4Mv2 dataset. The code is based on the original implementation of EGT at <https://github.com/shamim-hussain/egt_pytorch>. 
