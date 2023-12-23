@@ -1,6 +1,6 @@
 # Edge-augmented Graph Transformer with Triangular Attention
 
-![Banner](banner.png)
+![banner](banner.png)
 
 ## Introduction
 
