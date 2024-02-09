@@ -1,12 +1,14 @@
-# Edge-augmented Graph Transformer with Triangular Attention
+# Triplet Graph Transformers (Edge-augmented Graph Transformer with Triplet Interaction)
+
+## News
+- **02/09/2024** The preprint of our paper ["Triplet Interaction Improves Graph Transformers: Accurate Molecular Graph Learning with Triplet Graph Transformers"](https://arxiv.org/abs/2402.04538) is now available on ArXiv. We will include our new results, methods, along with model weights soon.
+
 
 ![banner](banner.png)
 
 ## Introduction
 
-This is the official implementation of Triangular Attention which extends the **Edge-augmented Graph Transformer (EGT)** architecture as described in <https://arxiv.org/abs/2108.03348>, on the [OGB-LSC](https://ogb.stanford.edu/docs/lsc/) PCQM4Mv2 dataset. The code is based on the original implementation of EGT at <https://github.com/shamim-hussain/egt_pytorch>. 
-
-Triangular attention extends the pairwise attention in EGT to allow for 2 pairs sharing a common node to interact with each other, which is found to be beneficial for molecular property prediction. We employ a two-stage model with the same architecture. The first stage produces an estimation of pair-wise distances between atoms, which is then used by the second stage to predict the HOMO-LUMO gap. The training is carried out in three stages - (i) training of the distance predictor, (ii) pretraining of the gap predictor with noisy coordinates and (iii) fine-tuning of the gap predictor with predicted distances. For more information see the [Technical Report](Report.pdf).
+This is the official implementation of the Triplet Graph Transformer (TGT) which is an extension upon the Edge-augmented Graph Transformer (EGT). Triplet interaction extends the pairwise channels in EGT to allow for 2 pairs sharing a common node to interact with each other, which is found to be beneficial for molecular property prediction. We employ a two-stage model with the same architecture. The first stage produces an estimation of pair-wise distances between atoms, which is then used by the second stage to predict the HOMO-LUMO gap. The training is carried out in three stages - (i) training of the distance predictor, (ii) pretraining of the gap predictor with noisy coordinates and (iii) fine-tuning of the gap predictor with predicted distances. For more information see our [paper](https://arxiv.org/abs/2402.04538).
 
 ## Results
 
@@ -111,10 +113,10 @@ The Anaconda environment in which the experiments were conducted is specified in
 
 Please cite the following paper if you find the code useful:
 ```
-@article{hussain2021global,
-  title={Global Self-Attention as a Replacement for Graph Convolution},
+@article{hussain2024triplet,
+  title={Triplet Interaction Improves Graph Transformers: Accurate Molecular Graph Learning with Triplet Graph Transformers},
   author={Hussain, Md Shamim and Zaki, Mohammed J and Subramanian, Dharmashankar},
-  journal={arXiv preprint arXiv:2108.03348},
-  year={2021}
+  journal={arXiv preprint arXiv:2402.04538},
+  year={2024}
 }
 ```
