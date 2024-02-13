@@ -1,4 +1,4 @@
-name: /gpfs/u/home/DLTM/DLTMhssn/scratch/py39_cu113
+name: py39_cu113
 channels:
   - pytorch
   - dglteam
