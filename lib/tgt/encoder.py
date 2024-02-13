@@ -2,7 +2,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from .layers import EGT_Layer
+from .layers import TGT_Layer
 
 class Graph(dict):
     def __dir__(self):
@@ -21,7 +21,7 @@ class Graph(dict):
         return self.__class__(self)
 
 
-class EGT_Encoder(nn.Module):
+class TGT_Encoder(nn.Module):
     class IndivConfig(list): pass
     
     def __init__(self,
@@ -45,7 +45,7 @@ class EGT_Encoder(nn.Module):
         assert (self.node_ended or self.edge_ended),\
                 'At least one of node_ended and edge_ended must be True'
         
-        self.EGT_layers = nn.ModuleList([EGT_Layer(**self.get_layer_kwargs(i))
+        self.TGT_layers = nn.ModuleList([TGT_Layer(**self.get_layer_kwargs(i))
                                                           for i in range(self.model_height)])
      
     
@@ -78,7 +78,7 @@ class EGT_Encoder(nn.Module):
         return layer_kwargs
     
     def apply_layer(self, layer_idx, graph):
-        layer = self.EGT_layers[layer_idx]
+        layer = self.TGT_layers[layer_idx]
         for _ in range(self.layer_multiplier):
             graph = layer(graph)
         return graph

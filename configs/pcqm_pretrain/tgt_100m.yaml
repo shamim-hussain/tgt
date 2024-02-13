@@ -1,5 +1,5 @@
 scheme: pcqm.pretrain
-model_name: egt_100m
+model_name: tgt_100m
 distributed: true           # In our distributed setting we had 32 GPUs (V100)
 batch_size: 64              # Total batch size = 64 * 32 = 2048
 model_height: 24
@@ -32,5 +32,6 @@ dist_loss_weight: 0.1
 validation_frequency: 10
 mixed_precision: true
 train_split: train           # Set it to "train-3d" for meaningful validation
-triangle_type: attention
-triangle_heads: 16
+triplet_type: attention       
+ # Set to "aggregation" for triplet aggregation
+triplet_heads: 16

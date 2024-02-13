@@ -1,5 +1,5 @@
 scheme: pcqm.finetune
-model_name: egt_100m_nordkit
+model_name: tgt_100m_nordkit
 distributed: true            # In our distributed setting we had 32 GPUs (V100)
 batch_size: 64               # Total batch size = 64 * 32 = 2048
 model_height: 24
@@ -28,9 +28,10 @@ num_dist_bins: 512
 range_dist_bins: 8
 dist_loss_weight: 0.1
 mixed_precision: true
-pretrained_weights_file: models/pcqm_pretrain/egt_100m/checkpoint/model_state  # Path to the *pretrained* model state file
-bins_input_path: models/pcqm_dist_pred/egt_100m_nordkit/predictions/bins50     # Path to the bins file, set to bins10 for 10 bins
+pretrained_weights_file: models/pcqm_pretrain/tgt_100m/checkpoint/model_state  # Path to the *pretrained* model state file
+bins_input_path: models/pcqm_dist_pred/tgt_100m_nordkit/predictions/bins50     # Path to the bins file, set to bins10 for 10 bins
 bins_shift_half: true
 bins_zero_diag: true
-triangle_type: attention
-triangle_heads: 16
+triplet_type: attention       
+ # Set to "aggregation" for triplet aggregation
+triplet_heads: 16

@@ -6,7 +6,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from . import consts as C
-from lib.egt import Graph
+from lib.tgt import Graph
 
 class EmbedInput(nn.Module):
     def __init__(self,

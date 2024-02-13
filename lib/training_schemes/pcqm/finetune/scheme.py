@@ -3,13 +3,13 @@ import numpy as np
 import torch.nn.functional as F
 
 from lib.training.hyperdict import HDict
-from lib.models.pcqm.multitask import EGT_Multi
+from lib.models.pcqm.multitask import TGT_Multi
 from lib.data.pcqm import data
 from lib.data.pcqm.structural_transform import AddStructuralData
 from ..commons import DiscreteDistLoss, coords2dist, BinsProcessor
-from ..egt_training import EGTTraining
+from ..tgt_training import TGTTraining
 
-class SCHEME(EGTTraining):
+class SCHEME(TGTTraining):
     def get_default_config(self):
         config_dict = super().get_default_config()
         config_dict.update(
@@ -67,7 +67,7 @@ class SCHEME(EGTTraining):
         model_config.update(
             num_dist_bins = self.config.num_dist_bins,
         )
-        return model_config, EGT_Multi
+        return model_config, TGT_Multi
     
     def preprocess_batch(self, batch, training):
         batch = super().preprocess_batch(batch, training)

@@ -1,5 +1,5 @@
 scheme: pcqm.dist_pred
-model_name: egt_100m_rdkit
+model_name: tgt_100m_nordkit
 distributed: true               # In our distributed setting we had 32 GPUs (V100)
 batch_size: 32                  # Total batch size = 32 * 32 = 1024
 model_height: 24
@@ -24,10 +24,11 @@ prediction_bmult: 10
 dataloader_workers: 1
 evaluation_type: prediction
 optimizer: apex_FusedAdam       # If apex is not installed, set it to "Adam"
-coords_input: rdkit             # Is set to rdkit since it uses rdkit coordinates
+coords_input: none              # Is set to none since no input coordinates are used
 coords_target: dft
 num_dist_bins: 256
 range_dist_bins: 8
-triangle_heads: 16
-triangle_type: attention
+triplet_heads: 16
+triplet_type: attention       
+ # Set to "aggregation" for triplet aggregation
 mixed_precision: true

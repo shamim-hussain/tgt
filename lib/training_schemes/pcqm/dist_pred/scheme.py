@@ -3,14 +3,14 @@ import numpy as np
 import torch.nn.functional as F
 
 from lib.training.hyperdict import HDict
-from lib.models.pcqm.distance_predictor import EGT_Distance
+from lib.models.pcqm.distance_predictor import TGT_Distance
 from lib.data.pcqm import data
 from lib.data.pcqm.structural_transform import AddStructuralData
 from lib.data.pcqm import bin_ops as pbins
-from ..egt_training import EGTTraining
+from ..tgt_training import TGTTraining
 from ..commons import DiscreteDistLoss, add_coords_noise, coords2dist
 
-class SCHEME(EGTTraining):
+class SCHEME(TGTTraining):
     def get_default_config(self):
         config_dict = super().get_default_config()
         config_dict.update(
@@ -83,7 +83,7 @@ class SCHEME(EGTTraining):
         model_config.update(
             num_dist_bins = self.config.num_dist_bins,
         )
-        return model_config, EGT_Distance
+        return model_config, TGT_Distance
     
     def preprocess_batch(self, batch, training):
         batch = super().preprocess_batch(batch, training)

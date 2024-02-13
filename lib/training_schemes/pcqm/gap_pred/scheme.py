@@ -3,13 +3,13 @@ import numpy as np
 import torch.nn.functional as F
 
 from lib.training.hyperdict import HDict
-from lib.models.pcqm.gap_predictor import EGT_Gap
+from lib.models.pcqm.gap_predictor import TGT_Gap
 from lib.data.pcqm import data
 from lib.data.pcqm.structural_transform import AddStructuralData
 from ..commons import BinsProcessor
-from ..egt_training import EGTTraining
+from ..tgt_training import TGTTraining
 
-class SCHEME(EGTTraining):
+class SCHEME(TGTTraining):
     def get_default_config(self):
         config_dict = super().get_default_config()
         config_dict.update(
@@ -59,7 +59,7 @@ class SCHEME(EGTTraining):
     
     def get_model_config(self):
         model_config, _ = super().get_model_config()
-        return model_config, EGT_Gap
+        return model_config, TGT_Gap
     
     def preprocess_batch(self, batch, training):
         batch = super().preprocess_batch(batch, training)
