@@ -3,9 +3,6 @@
 ## News
 - **02/09/2024** The preprint of our paper ["Triplet Interaction Improves Graph Transformers: Accurate Molecular Graph Learning with Triplet Graph Transformers"](https://arxiv.org/abs/2402.04538) is now available on ArXiv. We will include our new results, methods, along with model weights soon.
 
-
-![banner](banner.png)
-
 ## Introduction
 
 This is the official implementation of the Triplet Graph Transformer (TGT) which is an extension upon the Edge-augmented Graph Transformer (EGT). Triplet interaction extends the pairwise channels in EGT to allow for 2 pairs sharing a common node to interact with each other, which is found to be beneficial for molecular property prediction. We employ a two-stage model with the same architecture. The first stage produces an estimation of pair-wise distances between atoms, which is then used by the second stage to predict the HOMO-LUMO gap. The training is carried out in three stages - (i) training of the distance predictor, (ii) pretraining of the gap predictor with noisy coordinates and (iii) fine-tuning of the gap predictor with predicted distances. For more information see our [paper](https://arxiv.org/abs/2402.04538).
