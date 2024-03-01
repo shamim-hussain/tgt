@@ -13,6 +13,9 @@ class TGTTraining(LinearLRWarmupCosineDecay,MonitorBest,TestingBase,TrainingBase
         config = super().get_default_config()
         config.update(
             model_name              = 'tgt'        ,
+            model_prefix            = None         ,
+            save_path_prefix        = HDict.L(lambda c: 'models/pcqm' if c.model_prefix is None else f'models/pcqm/{c.model_prefix}'),
+            dataset_path            = 'data/PCQM'  ,
             model_height            = 4            ,
             node_width              = 64           ,
             edge_width              = 8            ,
@@ -34,16 +37,23 @@ class TGTTraining(LinearLRWarmupCosineDecay,MonitorBest,TestingBase,TrainingBase
             embed_3d_type           = 'gaussian'   ,
             num_3d_kernels          = 128          ,
             
+            evaluation_samples      = 10           ,
+            prediction_samples      = 10           ,
+            predict_in_train        = True         ,
+            
             allocate_max_batch      = True         ,
             save_all_checkpoints    = True         ,
             predict_on              = ['val']      ,
-            num_epochs              = 1000         ,
             pretrained_weights_file = None         ,
         )
         return config
     
     def __post_init__(self):
         self._nan_loss_count = 0
+        
+        self.nb_draw_samples = self.config.prediction_samples \
+                               if self.executing_command == 'predict'\
+                                  else self.config.evaluation_samples
     
     def get_dataset_config(self, split):
         if self.is_distributed and split == 'train':

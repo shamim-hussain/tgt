@@ -1,15 +1,16 @@
 scheme: pcqm.pretrain
-model_name: tgt_100m
+model_name: tgt_agx2_tp
+model_prefix: tgt_agx2_100m
 distributed: true           # In our distributed setting we had 32 GPUs (V100)
 batch_size: 64              # Total batch size = 64 * 32 = 2048
-model_height: 24
+model_height: 12
+layer_multiplier: 2
 node_width: 768
 edge_width: 256
 num_heads: 64
-num_epochs: 1000            # Max. number of epochs, actual number of epochs is determined by lr_total_steps
 max_lr: 0.002
 source_dropout: 0.3
-drop_path: 0.2
+drop_path: 0.1
 node_act_dropout: 0.1
 edge_act_dropout: 0.1
 lr_warmup_steps: 15000
@@ -19,8 +20,9 @@ edge_ffn_multiplier: 1.0
 scale_degree: true
 upto_hop: 32
 activation: gelu
+evaluation_samples: 10
 prediction_samples: 10
-prediction_bmult: 5
+prediction_bmult: 2
 dataloader_workers: 1
 evaluation_type: prediction
 optimizer: apex_FusedAdam    # If apex is not installed, set it to "Adam"
@@ -32,6 +34,5 @@ dist_loss_weight: 0.1
 validation_frequency: 10
 mixed_precision: true
 train_split: train           # Set it to "train-3d" for meaningful validation
-triplet_type: attention       
- # Set to "aggregation" for triplet aggregation
+triplet_type: aggregate      # Set to "attention" for triplet attention
 triplet_heads: 16

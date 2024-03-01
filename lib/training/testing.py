@@ -119,7 +119,7 @@ class TestingBase(TrainingBase):
     
     def load_model_state(self):
         if self.config.state_file is None:
-            state_file = osp.join(self.config.checkpoint_path, 'model_state')
+            state_file = osp.join(self.config.checkpoint_path, 'model_state.pt')
         else:
             state_file = self.config.state_file
         self.base_model.load_state_dict(torch.load(state_file))

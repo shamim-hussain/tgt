@@ -277,6 +277,7 @@ class LinearLRWarmupCosineDecay(TrainingBase):
     def get_default_config(self):
         config = super().get_default_config()
         config.update(
+            num_epochs      = 1000_000_000,
             lr_warmup_steps = 60_000,
             lr_total_steps  = 1_000_000,
             min_lr          = 1e-6,
@@ -284,6 +285,10 @@ class LinearLRWarmupCosineDecay(TrainingBase):
             verbose_lr_log  = True,
         )
         return config
+    
+    def epoch_msg(self, epoch, logs):
+        return f'Epoch {epoch+1}   [Init. Step = {self.state.global_step}]:'
+    
     def on_batch_begin(self, i, logs, training):
         super().on_batch_begin(i, logs, training)
         if training:

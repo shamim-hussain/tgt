@@ -1,0 +1,36 @@
+scheme: pcqm.dist_pred
+model_name: tgt_at_dp_nordkit
+model_prefix: tgt_at_200m
+distributed: true               # In our distributed setting we had 32 GPUs (V100)
+batch_size: 32                  # Total batch size = 32 * 32 = 1024
+model_height: 24
+node_width: 768
+edge_width: 256
+num_heads: 64
+max_lr: 0.001
+source_dropout: 0.3
+drop_path: 0.2
+node_act_dropout: 0.1
+edge_act_dropout: 0.1
+lr_warmup_steps: 30000
+lr_total_steps: 60000
+node_ffn_multiplier: 1.0
+edge_ffn_multiplier: 1.0
+scale_degree: true
+upto_hop: 32
+activation: gelu
+evaluation_samples: 10
+prediction_samples: 50          # Number of samples used for prediction, also number of bins samples saved and used by the gap prediction task
+prediction_bmult: 2
+dataloader_workers: 1
+evaluation_type: prediction
+optimizer: apex_FusedAdam       # If apex is not installed, set it to "Adam"
+coords_input: none              # Is set to none since no input coordinates are used
+coords_target: dft
+num_dist_bins: 256
+range_dist_bins: 8
+triplet_heads: 16
+triplet_type: attention         # Set to "aggregate" for triplet aggregation
+mixed_precision: true
+# predict_on: ["test"]          # Uncomment this line to predict on the test set
+

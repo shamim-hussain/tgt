@@ -204,7 +204,7 @@ class TrainingBase:
             save_path               = HDict.L(lambda c: osp.join(c.save_path_prefix,c.model_name)),
             checkpoint_path         = HDict.L(lambda c: osp.join(c.save_path,"checkpoint")),
             config_path             = HDict.L(lambda c: osp.join(c.save_path,"config")),
-            summary_path            = HDict.L(lambda c: osp.join(c.save_path,"summary")),
+            summary_path            = HDict.L(lambda c: osp.join(c.save_path,"model_summary")),
             log_path                = HDict.L(lambda c: osp.join(c.save_path,"logs")),
             validation_frequency    = 1,
             validation_condition    = None,
@@ -254,9 +254,15 @@ class TrainingBase:
     
     def save_config_file(self):
         if not self.is_main_rank: return
-        os.makedirs(os.path.dirname(self.config.config_path), exist_ok=True)
-        cfg.save_config_to_file(self.config_dict.to_dict(), self.config.config_path+'.yaml')
-        cfg.save_config_to_file(self.config_input, self.config.config_path+'_input.yaml')
+        config_path = self.config.config_path
+        dirname, basename = osp.split(config_path)
+        os.makedirs(osp.dirname(config_path), exist_ok=True)
+        
+        config_path = osp.join(dirname, f'{basename}.yaml')
+        cfg.save_config_to_file(self.config_input, config_path)
+        
+        all_config_path = osp.join(dirname, f'all_{basename}.yaml')
+        cfg.save_config_to_file(self.config_dict.to_dict(), all_config_path)
     
     def model_summary(self):
         if not self.is_main_rank: return
@@ -289,15 +295,15 @@ class TrainingBase:
         os.makedirs(ckpt_path, exist_ok=True)
         
         if save_state:
-            torch.save(self.state, os.path.join(ckpt_path, 'training_state'))
+            torch.save(self.state, os.path.join(ckpt_path, 'training_state.pt'))
         if save_model:
             model_dict = state_dict_to_cpu(self.base_model.state_dict())
-            torch.save(model_dict, os.path.join(ckpt_path, 'model_state'))
+            torch.save(model_dict, os.path.join(ckpt_path, 'model_state.pt'))
         if save_optimizer:
             optim_dict = state_dict_to_cpu(self.optimizer.state_dict())
-            torch.save(optim_dict, os.path.join(ckpt_path, 'optimizer_state'))
+            torch.save(optim_dict, os.path.join(ckpt_path, 'optimizer_state.pt'))
         if save_grad_scaler and self.grad_scaler is not None:
-            torch.save(self.grad_scaler.state_dict(), os.path.join(ckpt_path, 'grad_scaler_state'))
+            torch.save(self.grad_scaler.state_dict(), os.path.join(ckpt_path, 'grad_scaler_state.pt'))
         print(f'Checkpoint saved to: {ckpt_path}',flush=True)
         
         if save_backup_checkpoint and self.config.save_all_checkpoints:
@@ -305,12 +311,12 @@ class TrainingBase:
                                      f'epoch_{self.state.current_epoch}')
             os.makedirs(ckpt_path, exist_ok=True)
             
-            torch.save(self.state, os.path.join(ckpt_path, 'training_state'))
-            torch.save(model_dict, os.path.join(ckpt_path, 'model_state'))
-            torch.save(optim_dict, os.path.join(ckpt_path, 'optimizer_state'))
+            torch.save(self.state, os.path.join(ckpt_path, 'training_state.pt'))
+            torch.save(model_dict, os.path.join(ckpt_path, 'model_state.pt'))
+            torch.save(optim_dict, os.path.join(ckpt_path, 'optimizer_state.pt'))
             if self.grad_scaler is not None:
                 torch.save(self.grad_scaler.state_dict(),
-                           os.path.join(ckpt_path, 'grad_scaler_state'))
+                           os.path.join(ckpt_path, 'grad_scaler_state.pt'))
             print(f'Backup checkpoint saved to: {ckpt_path}',flush=True)
     
     def load_checkpoint(self,
@@ -324,20 +330,20 @@ class TrainingBase:
         ckpt_path = self.config.checkpoint_path
         if load_state:
             try:
-                self.state.update(torch.load(os.path.join(ckpt_path, 'training_state')))
+                self.state.update(torch.load(os.path.join(ckpt_path, 'training_state.pt')))
                 if self.is_main_rank: print(f'State loaded from: {ckpt_path}',flush=True)
             except FileNotFoundError: pass
         if load_optimizer:
             torch.cuda.empty_cache()
             try:
-                self.optimizer.load_state_dict(torch.load(os.path.join(ckpt_path, 'optimizer_state')))
+                self.optimizer.load_state_dict(torch.load(os.path.join(ckpt_path, 'optimizer_state.pt')))
                 if self.is_main_rank: print(f'Optimizer loaded from: {ckpt_path}',flush=True)
             except FileNotFoundError: pass
             torch.cuda.empty_cache()
         if load_model:
             torch.cuda.empty_cache()
             try:
-                self.base_model.load_state_dict(torch.load(os.path.join(ckpt_path, 'model_state')),
+                self.base_model.load_state_dict(torch.load(os.path.join(ckpt_path, 'model_state.pt')),
                                                 strict=strict_weight_check)
                 if self.is_main_rank: print(f'Model loaded from: {ckpt_path}',flush=True)
             except FileNotFoundError: pass
@@ -345,7 +351,7 @@ class TrainingBase:
         if load_grad_scaler:
             try:
                 if self.grad_scaler is not None:
-                    self.grad_scaler.load_state_dict(torch.load(os.path.join(ckpt_path, 'grad_scaler_state')))
+                    self.grad_scaler.load_state_dict(torch.load(os.path.join(ckpt_path, 'grad_scaler_state.pt')))
                     if self.is_main_rank: print(f'Grad scaler loaded from: {ckpt_path}',flush=True)
                     torch.cuda.empty_cache()
             except FileNotFoundError: pass
@@ -596,6 +602,9 @@ class TrainingBase:
         self.set_all_lr(new_lr)
         logs['lr'] = new_lr
     
+    def epoch_msg(self, epoch, logs):
+        return f'Epoch {epoch+1}/{self.config.num_epochs}:'
+    
     def train_model(self):
         if self.is_main_rank: 
             history = self.load_history()
@@ -607,10 +616,11 @@ class TrainingBase:
             for i in range(starting_epoch, self.config.num_epochs):
                 timestamps = [datetime.now()]
                 self.state.current_epoch = i
-                if self.is_main_rank: 
-                    print(f'\nEpoch {i+1}/{self.config.num_epochs}:', flush=True)
                 logs = dict(epoch = self.state.current_epoch, 
                             global_step = self.state.global_step)
+                if self.is_main_rank:
+                    epoch_msg = f'\n{self.epoch_msg(i, logs)}'
+                    print(epoch_msg, flush=True)
                 
                 try:
                     self.set_lr_from_schedule(i, logs)

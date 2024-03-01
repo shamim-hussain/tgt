@@ -13,10 +13,7 @@ class SCHEME(TGTTraining):
     def get_default_config(self):
         config_dict = super().get_default_config()
         config_dict.update(
-            save_path_prefix    = 'models/pcqm_finetune',
-            dataset_path        = 'data/PCQM',
-            prediction_samples  = 1,
-            predict_in_train    = HDict.L(lambda c: c.prediction_samples > 1),
+            save_path_prefix    = HDict.L(lambda c: 'models/pcqm/finetune' if c.model_prefix is None else f'models/pcqm/{c.model_prefix}/finetune'),
             embed_3d_type       = 'gaussian',
             num_dist_bins       = 256,
             range_dist_bins     = 8,
@@ -32,6 +29,8 @@ class SCHEME(TGTTraining):
     
     def __post_init__(self):
         super().__post_init__()
+        if self.executing_command == 'evaluate':
+            self.nb_draw_samples = self.config.prediction_samples
         self.dist_loss_fn = DiscreteDistLoss(num_bins=self.config.num_dist_bins,
                                              range_bins=self.config.range_dist_bins)
         if self.config.bins_input_path is not None:
@@ -103,7 +102,7 @@ class SCHEME(TGTTraining):
     
     def prediction_step(self, batch):
         gap_pred = None
-        nb_samples = self.config.prediction_samples
+        nb_samples = self.nb_draw_samples
         valid_samples = 0
         
         all_dist_inputs = batch['dist_input']
@@ -156,5 +155,7 @@ class SCHEME(TGTTraining):
                                             evaluation_stage=True)
         return results    
     
-            
+    def make_predictions(self):
+        super().make_predictions()
+        self.evaluate_and_save()
 

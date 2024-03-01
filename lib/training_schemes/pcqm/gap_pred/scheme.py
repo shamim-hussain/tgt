@@ -13,10 +13,7 @@ class SCHEME(TGTTraining):
     def get_default_config(self):
         config_dict = super().get_default_config()
         config_dict.update(
-            save_path_prefix    = 'models/pcqm_gap_pred',
-            dataset_path        = 'data/PCQM',
-            prediction_samples  = 1,
-            predict_in_train    = HDict.L(lambda c: c.prediction_samples > 1),
+            save_path_prefix    = HDict.L(lambda c: 'models/pcqm/gap_pred' if c.model_prefix is None else f'models/pcqm/{c.model_prefix}/gap_pred'),
             embed_3d_type       = 'gaussian',
             train_split         = 'train',
             val_split           = 'valid',
@@ -29,6 +26,8 @@ class SCHEME(TGTTraining):
     
     def __post_init__(self):
         super().__post_init__()
+        if self.executing_command == 'evaluate':
+            self.nb_draw_samples = self.config.prediction_samples
         if self.config.bins_input_path is not None:
             self.bins_proc = BinsProcessor(self.config.bins_input_path,
                                            shift_half=self.config.bins_shift_half,
@@ -78,7 +77,7 @@ class SCHEME(TGTTraining):
     
     def prediction_step(self, batch):
         gap_pred = []
-        nb_samples = self.config.prediction_samples
+        nb_samples = self.nb_draw_samples
         valid_samples = 0
         
         all_dist_inputs = batch['dist_input']
@@ -154,4 +153,6 @@ class SCHEME(TGTTraining):
                                  save_grad_scaler=False,
                                  save_backup_checkpoint=False)
     
-
+    def make_predictions(self):
+        super().make_predictions()
+        self.evaluate_and_save()
