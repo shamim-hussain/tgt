@@ -2,12 +2,12 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from lib.egt import EGT_Encoder
+from lib.tgt import TGT_Encoder
 
 from . import layers
 from . import consts as C
 
-class EGT_Gap(nn.Module):
+class TGT_Gap(nn.Module):
     def __init__(self,
                  model_height,
                  layer_multiplier    = 1         ,
@@ -28,7 +28,7 @@ class EGT_Gap(nn.Module):
         self.edge_width          = layer_configs['edge_width']
         
         self.layer_configs = layer_configs
-        self.encoder = EGT_Encoder(model_height     = self.model_height      ,
+        self.encoder = TGT_Encoder(model_height     = self.model_height      ,
                                    layer_multiplier = self.layer_multiplier  ,
                                    node_ended       = True                   ,
                                    edge_ended       = False                  ,

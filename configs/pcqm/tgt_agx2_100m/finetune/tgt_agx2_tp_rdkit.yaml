@@ -1,15 +1,16 @@
 scheme: pcqm.finetune
-model_name: egt_100m_nordkit
+model_name: tgt_agx2_tp_rdkit
+model_prefix: tgt_agx2_100m
 distributed: true            # In our distributed setting we had 32 GPUs (V100)
 batch_size: 64               # Total batch size = 64 * 32 = 2048
-model_height: 24
+model_height: 12
+layer_multiplier: 2
 node_width: 768
 edge_width: 256
 num_heads: 64
-num_epochs: 1000             # Max. number of epochs, actual number of epochs is determined by lr_total_steps
 max_lr: 0.0002
 source_dropout: 0.3
-drop_path: 0.2
+drop_path: 0.1
 node_act_dropout: 0.1
 edge_act_dropout: 0.1
 lr_warmup_steps: 3000
@@ -19,8 +20,9 @@ edge_ffn_multiplier: 1.0
 scale_degree: true
 upto_hop: 32
 activation: gelu
-prediction_samples: 10        # Set to 50 if you want to use 50 samples for prediction
-prediction_bmult: 5
+evaluation_samples: 10
+prediction_samples: 50        # Set to 10 if you want to use 10 samples for prediction
+prediction_bmult: 2
 dataloader_workers: 1
 evaluation_type: prediction
 optimizer: apex_FusedAdam     # If apex is not installed, set it to "Adam"
@@ -28,9 +30,9 @@ num_dist_bins: 512
 range_dist_bins: 8
 dist_loss_weight: 0.1
 mixed_precision: true
-pretrained_weights_file: models/pcqm_pretrain/egt_100m/checkpoint/model_state  # Path to the *pretrained* model state file
-bins_input_path: models/pcqm_dist_pred/egt_100m_nordkit/predictions/bins50     # Path to the bins file, set to bins10 for 10 bins
+pretrained_weights_file: models/pcqm/tgt_agx2_100m/pretrain/tgt_agx2_tp/checkpoint/model_state.pt  # Path to the *pretrained* model state file
+bins_input_path: models/pcqm/tgt_agx2_100m/dist_pred/tgt_agx2_dp_rdkit/predictions/bins50       # Path to the bins file, set to bins10 for 10 bins
 bins_shift_half: true
 bins_zero_diag: true
-triangle_type: attention
-triangle_heads: 16
+triplet_type: aggregate       # Set to "attention" for triplet attention
+triplet_heads: 16

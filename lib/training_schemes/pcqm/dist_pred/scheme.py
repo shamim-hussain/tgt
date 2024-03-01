@@ -3,22 +3,19 @@ import numpy as np
 import torch.nn.functional as F
 
 from lib.training.hyperdict import HDict
-from lib.models.pcqm.distance_predictor import EGT_Distance
+from lib.models.pcqm.distance_predictor import TGT_Distance
 from lib.data.pcqm import data
 from lib.data.pcqm.structural_transform import AddStructuralData
 from lib.data.pcqm import bin_ops as pbins
-from ..egt_training import EGTTraining
+from ..tgt_training import TGTTraining
 from ..commons import DiscreteDistLoss, add_coords_noise, coords2dist
 
-class SCHEME(EGTTraining):
+class SCHEME(TGTTraining):
     def get_default_config(self):
         config_dict = super().get_default_config()
         config_dict.update(
-            save_path_prefix    = 'models/pcqm_dist_pred',
-            dataset_path        = 'data/PCQM',
-            prediction_samples  = 10,
-            predict_in_train    = True,
-            predict_on          = ['train', 'val'],
+            save_path_prefix    = HDict.L(lambda c: 'models/pcqm/dist_pred' if c.model_prefix is None else f'models/pcqm/{c.model_prefix}/dist_pred'),
+            predict_on          = ['train', 'val'] if self.executing_command == 'predict' else ['val'],
             coords_noise        = 0,
             coords_noise_smooth = 0,
             coords_input        = 'rdkit',
@@ -27,8 +24,8 @@ class SCHEME(EGTTraining):
                                                      else 'none'),
             num_dist_bins       = 512,
             range_dist_bins     = 8,
-            train_split         = 'train-3d' if self.executing_command == 'train' else 'train',
-            val_split           = 'valid-3d' if self.executing_command == 'train' else 'valid',
+            train_split         = 'train-3d' if self.executing_command != 'predict' else 'train',
+            val_split           = 'valid-3d' if self.executing_command != 'predict' else 'valid',
             test_split          = 'test-dev',
             save_pred_dir       = HDict.L(lambda c: f'bins{c.prediction_samples}'),
             save_bins_smooth    = 0,
@@ -43,15 +40,15 @@ class SCHEME(EGTTraining):
         
         self._uses_3d = self.config.coords_input != 'none'
         
-        executing_training = self.executing_command == 'train'
+        training_or_eval = self.executing_command in ('train', 'evaluate')
         
         input_dist_rdkit = self.config.coords_input == 'rdkit'
         predict_dist_rdkit = self.config.coords_target == 'rdkit'
-        self._use_rdkit_coords = input_dist_rdkit or (predict_dist_rdkit and executing_training)
+        self._use_rdkit_coords = input_dist_rdkit or (predict_dist_rdkit and training_or_eval)
         
         input_dist_dft = self.config.coords_input == 'dft'
         predict_dist_dft = self.config.coords_target == 'dft'
-        self._use_dft_coords = input_dist_dft or (predict_dist_dft and executing_training)
+        self._use_dft_coords = input_dist_dft or (predict_dist_dft and training_or_eval)
     
     def get_dataset_config(self, split):
         dataset_config, _ = super().get_dataset_config(split)
@@ -83,7 +80,7 @@ class SCHEME(EGTTraining):
         model_config.update(
             num_dist_bins = self.config.num_dist_bins,
         )
-        return model_config, EGT_Distance
+        return model_config, TGT_Distance
     
     def preprocess_batch(self, batch, training):
         batch = super().preprocess_batch(batch, training)
@@ -141,7 +138,7 @@ class SCHEME(EGTTraining):
     
     def predict_probs(self, batch):
         probs = None
-        nb_samples = self.config.prediction_samples
+        nb_samples = self.nb_draw_samples
         valid_samples = 0
         for _ in range(nb_samples*2):
             new_logits = self.model(batch)
@@ -183,7 +180,7 @@ class SCHEME(EGTTraining):
     
     def predict_bins(self, batch):
         bins = []
-        nb_samples = self.config.prediction_samples
+        nb_samples = self.nb_draw_samples
         valid_samples = 0
         for _ in range(nb_samples*2):
             logits = self.model(batch)
@@ -257,6 +254,9 @@ class SCHEME(EGTTraining):
         return results    
     
     def predict_and_save(self):
+        if not self.executing_command == 'predict':
+            return super().predict_and_save()
+        
         import pyarrow as pa
         import pyarrow.parquet as pq
         import os
@@ -292,7 +292,7 @@ class SCHEME(EGTTraining):
                 meta = dict(
                     num_bins = self.config.num_dist_bins,
                     range_bins = self.config.range_dist_bins,
-                    num_samples = self.config.prediction_samples,
+                    num_samples = self.nb_draw_samples,
                 )
                 with open(meta_path, 'w') as f:
                     json.dump(meta, f)

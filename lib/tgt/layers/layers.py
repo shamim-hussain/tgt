@@ -3,7 +3,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from .activations import get_activation
-from .triangle import get_triangle_layer
+from .triplet import get_triplet_layer
 
 @torch.jit.script
 def form_degree_scalers(gates: torch.Tensor):
@@ -177,24 +177,24 @@ class DropPath(nn.Module):
         return f'{self.__class__.__name__}(drop_path={self.drop_path})' 
 
 
-class EGT_Layer(nn.Module):
+class TGT_Layer(nn.Module):
     def __init__(self,
-                 node_width                      ,
-                 edge_width                      ,
-                 num_heads                       ,
-                 activation          = 'gelu'    ,
-                 scale_degree        = True      ,
-                 node_update         = True      ,
-                 edge_update         = True      ,
-                 triangle_heads      = 0         ,
-                 triangle_type       = 'update'  ,
-                 triangle_dropout    = 0         ,
-                 node_ffn_multiplier = 1.        ,
-                 edge_ffn_multiplier = 1.        ,
-                 source_dropout      = 0         ,
-                 drop_path           = 0         ,
-                 node_act_dropout    = 0         ,
-                 edge_act_dropout    = 0         ,
+                 node_width                         ,
+                 edge_width                         ,
+                 num_heads                          ,
+                 activation          = 'gelu'       ,
+                 scale_degree        = True         ,
+                 node_update         = True         ,
+                 edge_update         = True         ,
+                 triplet_heads       = 0            ,
+                 triplet_type        = 'aggregate'  ,
+                 triplet_dropout     = 0            ,
+                 node_ffn_multiplier = 1.           ,
+                 edge_ffn_multiplier = 1.           ,
+                 source_dropout      = 0            ,
+                 drop_path           = 0            ,
+                 node_act_dropout    = 0            ,
+                 edge_act_dropout    = 0            ,
                  ):
         super().__init__()
         self.node_width          = node_width
@@ -210,11 +210,11 @@ class EGT_Layer(nn.Module):
         self.scale_degree        = scale_degree
         self.node_update         = node_update
         self.edge_update         = edge_update
-        self.triangle_heads      = triangle_heads
-        self.triangle_type       = triangle_type
-        self.triangle_dropout    = triangle_dropout
+        self.triplet_heads       = triplet_heads
+        self.triplet_type        = triplet_type
+        self.triplet_dropout     = triplet_dropout
         
-        self._triangle_update     = self.triangle_heads > 0
+        self._triplet_update     = self.triplet_heads > 0
         
         if self.node_update:
             self.update = EGT_Attention(
@@ -242,12 +242,12 @@ class EGT_Layer(nn.Module):
                 activation      = self.activation,
                 )
         if self.edge_update:
-            if self._triangle_update:
-                TriangleLayer = get_triangle_layer(self.triangle_type)
-                self.tria = TriangleLayer(
-                    edge_width      = self.edge_width,
-                    num_heads       = self.triangle_heads,
-                    source_dropout  = self.triangle_dropout,
+            if self._triplet_update:
+                TripletLayer = get_triplet_layer(self.triplet_type)
+                self.tria = TripletLayer(
+                    edge_width        = self.edge_width,
+                    num_heads         = self.triplet_heads,
+                    attention_dropout = self.triplet_dropout,
                 )
             
             self.edge_ffn = FFN(
@@ -278,7 +278,7 @@ class EGT_Layer(nn.Module):
             e = self.drop_path(e)
             e.add_(e_r1)
             
-            if self._triangle_update:
+            if self._triplet_update:
                 e_rt = e
                 e = self.tria(e, mask)
                 e = self.drop_path(e)

@@ -1,31 +1,34 @@
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 
-def get_triangle_layer(layer_type):
-    if layer_type == 'update':
-        return TriangleUpdate
-    elif layer_type == 'update_ungated':
-        return TriangleUpdateUngated
+def get_triplet_layer(layer_type):
+    if layer_type == 'aggregate':
+        return TripletAggregate
+    elif layer_type == 'aggregate_ungated':
+        return TripletAggregateUngated
     elif layer_type == 'attention':
-        return TriangleAttention
+        return TripletAttention
     elif layer_type == 'attention_ungated':
-        return TriangleAttentionUngated
-    elif layer_type == 'attention_mq':
-        return TriangleAttentionMQ
+        return TripletAttentionUngated
+    elif layer_type == 'tiangular_update':
+        return TriangularUpdate
+    elif layer_type == 'axial_attention':
+        return AxialAttention
     else:
         raise ValueError(f'Invalid layer_type: {layer_type}')
 
-class TriangleUpdate(nn.Module):
+class TripletAggregate(nn.Module):
     def __init__(self,
                  edge_width            ,
                  num_heads             ,
-                 source_dropout = 0    ,
+                 attention_dropout = 0 ,
                  ):
         super().__init__()
         self.edge_width          = edge_width
         self.num_heads           = num_heads
-        self.source_dropout      = source_dropout
+        self.attention_dropout   = attention_dropout
         
         assert not (self.edge_width % self.num_heads),\
                 'edge_width must be divisible by num_heads'
@@ -50,24 +53,18 @@ class TriangleUpdate(nn.Module):
         V_in = V_in.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
         V_out = V_out.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
         
-        mask_in = mask
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,1,num_edges,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_in = mask_in + rmask
-        gates_in = torch.sigmoid(G_in+mask_in)
-        A_in = torch.softmax(E_in+mask_in, dim=2) * gates_in
+        gates_in = torch.sigmoid(G_in+mask)
+        A_in = torch.softmax(E_in+mask, dim=2) * gates_in
+        if self.attention_dropout > 0:
+            A_in = F.dropout(A_in, p=self.attention_dropout,
+                             training=self.training, inplace=True)
         Va_in = torch.einsum('bikh,bjkdh->bijdh', A_in, V_in)
         
-        mask_out = mask
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,num_edges,1,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_out = mask_out + rmask
-        gates_out = torch.sigmoid(G_out+mask_out)
-        A_out = torch.softmax(E_out+mask_out, dim=1) * gates_out
+        gates_out = torch.sigmoid(G_out)
+        A_out = torch.softmax(E_out, dim=1) * gates_out
+        if self.attention_dropout > 0:
+            A_out = F.dropout(A_out, p=self.attention_dropout,
+                              training=self.training, inplace=True)
         Va_out = torch.einsum('bkih,bkjdh->bijdh', A_out, V_out)
         
         Va = torch.cat([Va_in, Va_out], dim=-1).view(bsize,num_edges,num_edges,embed_dim*2)
@@ -77,16 +74,16 @@ class TriangleUpdate(nn.Module):
 
 
 
-class TriangleUpdateUngated(nn.Module):
+class TripletAggregateUngated(nn.Module):
     def __init__(self,
                  edge_width            ,
                  num_heads             ,
-                 source_dropout = 0    ,
+                 attention_dropout = 0 ,
                  ):
         super().__init__()
         self.edge_width          = edge_width
         self.num_heads           = num_heads
-        self.source_dropout      = source_dropout
+        self.attention_dropout   = attention_dropout
         
         assert not (self.edge_width % self.num_heads),\
                 'edge_width must be divisible by num_heads'
@@ -111,24 +108,16 @@ class TriangleUpdateUngated(nn.Module):
         V_in = V_in.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
         V_out = V_out.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
         
-        mask_in = mask
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,1,num_edges,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_in = mask_in + rmask
-        
-        A_in = torch.softmax(E_in+mask_in, dim=2)
+        A_in = torch.softmax(E_in+mask, dim=2)
+        if self.attention_dropout > 0:
+            A_in = F.dropout(A_in, p=self.attention_dropout,
+                             training=self.training, inplace=True)
         Va_in = torch.einsum('bikh,bjkdh->bijdh', A_in, V_in)
         
-        mask_out = mask
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,num_edges,1,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_out = mask_out + rmask
-        
-        A_out = torch.softmax(E_out+mask_out, dim=1)
+        A_out = torch.softmax(E_out+mask, dim=1)
+        if self.attention_dropout > 0:
+            A_out = F.dropout(A_out, p=self.attention_dropout,
+                              training=self.training, inplace=True)
         Va_out = torch.einsum('bkih,bkjdh->bijdh', A_out, V_out)
         
         Va = torch.cat([Va_in, Va_out], dim=-1)\
@@ -138,17 +127,65 @@ class TriangleUpdateUngated(nn.Module):
         return e
 
 
+@torch.jit.script
+def siglin(gates, lins):
+    return torch.sigmoid(gates) * lins
 
-class TriangleAttention(nn.Module):
+class TriangularUpdate(nn.Module):
     def __init__(self,
                  edge_width            ,
                  num_heads             ,
-                 source_dropout = 0    ,
+                 attention_dropout = 0 ,
                  ):
         super().__init__()
         self.edge_width          = edge_width
         self.num_heads           = num_heads
-        self.source_dropout      = source_dropout
+        self.attention_dropout   = attention_dropout
+        
+        self.tri_ln_e   = nn.LayerNorm(self.edge_width)
+        
+        self.lin_V   = nn.Linear(self.edge_width, self.num_heads*4)
+        self.lin_E  = nn.Linear(self.edge_width, self.num_heads*4)
+        
+        self.lin_O  = nn.Linear(self.num_heads*2, self.edge_width*2)
+    
+    def forward(self, e, mask):
+        e_ln = self.tri_ln_e(e)
+        
+        # Projections
+        V_in_g, V_in_l, V_out_g, V_out_l = self.lin_V(e_ln).chunk(4, dim=-1)
+        E_in_g, E_in_l, E_out_g, E_out_l = self.lin_E(e_ln).chunk(4, dim=-1)
+        
+        E_in_g = E_in_g + mask
+        E_out_g = E_out_g + mask
+        V_in_g = V_in_g + mask
+        V_out_g = V_out_g + mask
+        
+        V_in = siglin(V_in_g, V_in_l)
+        V_out = siglin(V_out_g, V_out_l)
+        E_in = siglin(E_in_g, E_in_l)
+        E_out = siglin(E_out_g, E_out_l)
+        
+        Va_in = torch.einsum('bikh,bjkh->bijh', E_in, V_in)
+        Va_out = torch.einsum('bkih,bkjh->bijh', E_out, V_out)
+        
+        Va = torch.cat([Va_in, Va_out], dim=-1)
+        
+        e_g, e_l = self.lin_O(Va).chunk(2, dim=-1)
+        e = siglin(e_g, e_l)
+        return e
+
+
+class TripletAttention(nn.Module):
+    def __init__(self,
+                 edge_width            ,
+                 num_heads             ,
+                 attention_dropout = 0 ,
+                 ):
+        super().__init__()
+        self.edge_width          = edge_width
+        self.num_heads           = num_heads
+        self.attention_dropout   = attention_dropout
         
         assert not (self.edge_width % self.num_heads),\
                 'edge_width must be divisible by num_heads'
@@ -181,13 +218,11 @@ class TriangleAttention(nn.Module):
         H_in = torch.einsum('bijdh,bjkdh->bijkh', Q_in, K_in) + E_in
         
         mask_in = mask.unsqueeze(2)
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,1,num_edges,num_edges,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_in = mask_in + rmask
         gates_in = torch.sigmoid(G_in+mask_in)
         A_in = torch.softmax(H_in+mask_in, dim=3) * gates_in
+        if self.attention_dropout > 0:
+            A_in = F.dropout(A_in, p=self.attention_dropout,
+                             training=self.training, inplace=True)
         
         Va_in = torch.einsum('bijkh,bjkdh->bijdh', A_in, V_in)
         
@@ -202,13 +237,11 @@ class TriangleAttention(nn.Module):
         H_out = torch.einsum('bijdh,bkjdh->bkijh', Q_out, K_out) + E_out
         
         mask_out = mask.unsqueeze(3)
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,num_edges,1,num_edges,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_out = mask_out + rmask
         gates_out = torch.sigmoid(G_out+mask_out)
         A_out = torch.softmax(H_out+mask_out, dim=1) * gates_out
+        if self.attention_dropout > 0:
+            A_out = F.dropout(A_out, p=self.attention_dropout,
+                              training=self.training, inplace=True)
         
         Va_out = torch.einsum('bkijh,bkjdh->bijdh', A_out, V_out)
         
@@ -217,16 +250,16 @@ class TriangleAttention(nn.Module):
         return e
 
 
-class TriangleAttentionUngated(nn.Module):
+class TripletAttentionUngated(nn.Module):
     def __init__(self,
                  edge_width            ,
                  num_heads             ,
-                 source_dropout = 0    ,
+                 attention_dropout = 0 ,
                  ):
         super().__init__()
         self.edge_width          = edge_width
         self.num_heads           = num_heads
-        self.source_dropout      = source_dropout
+        self.attention_dropout   = attention_dropout
         
         assert not (self.edge_width % self.num_heads),\
                 'edge_width must be divisible by num_heads'
@@ -259,13 +292,10 @@ class TriangleAttentionUngated(nn.Module):
         H_in = torch.einsum('bijdh,bjkdh->bijkh', Q_in, K_in) + E_in
         
         mask_in = mask.unsqueeze(2)
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,1,num_edges,num_edges,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_in = mask_in + rmask
-        
         A_in = torch.softmax(H_in+mask_in, dim=3)
+        if self.attention_dropout > 0:
+            A_in = F.dropout(A_in, p=self.attention_dropout,
+                             training=self.training, inplace=True)
         
         Va_in = torch.einsum('bijkh,bjkdh->bijdh', A_in, V_in)
         
@@ -280,13 +310,10 @@ class TriangleAttentionUngated(nn.Module):
         H_out = torch.einsum('bijdh,bkjdh->bkijh', Q_out, K_out) + E_out
         
         mask_out = mask.unsqueeze(3)
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,num_edges,1,num_edges,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_out = mask_out + rmask
-        
         A_out = torch.softmax(H_out+mask_out, dim=1)
+        if self.attention_dropout > 0:
+            A_out = F.dropout(A_out, p=self.attention_dropout,
+                              training=self.training, inplace=True)
         
         Va_out = torch.einsum('bkijh,bkjdh->bijdh', A_out, V_out)
         
@@ -295,18 +322,16 @@ class TriangleAttentionUngated(nn.Module):
         return e
 
 
-
-
-class TriangleAttentionMQ(nn.Module):
+class AxialAttention(nn.Module):
     def __init__(self,
                  edge_width            ,
                  num_heads             ,
-                 source_dropout = 0    ,
+                 attention_dropout = 0 ,
                  ):
         super().__init__()
         self.edge_width          = edge_width
         self.num_heads           = num_heads
-        self.source_dropout      = source_dropout
+        self.attention_dropout   = attention_dropout
         
         assert not (self.edge_width % self.num_heads),\
                 'edge_width must be divisible by num_heads'
@@ -314,15 +339,8 @@ class TriangleAttentionMQ(nn.Module):
         self._scale_factor = self._dot_dim ** -0.5
         
         self.tri_ln_e   = nn.LayerNorm(self.edge_width)
-        
-        self.lin_Q_in = nn.Linear(self.edge_width, self.edge_width)
-        self.lin_KV_in = nn.Linear(self.edge_width, self._dot_dim*2)
-        self.lin_EG_in  = nn.Linear(self.edge_width, self.num_heads*2)
-        
-        self.lin_Q_out = nn.Linear(self.edge_width, self.edge_width)
-        self.lin_KV_out = nn.Linear(self.edge_width, self._dot_dim*2)
-        self.lin_EG_out  = nn.Linear(self.edge_width, self.num_heads*2)
-        
+        self.lin_QKV_in = nn.Linear(self.edge_width, self.edge_width*3)
+        self.lin_QKV_out = nn.Linear(self.edge_width, self.edge_width*3)
         self.lin_O  = nn.Linear(self.edge_width*2, self.edge_width)
     
     def forward(self, e, mask):
@@ -330,50 +348,41 @@ class TriangleAttentionMQ(nn.Module):
         e_ln = self.tri_ln_e(e)
         
         # Projections
-        Q_in = self.lin_Q_in(e_ln)
-        K_in, V_in = self.lin_KV_in(e_ln).chunk(2, dim=-1)
-        E_in, G_in = self.lin_EG_in(e_ln).unsqueeze(2).chunk(2, dim=-1) # bi1kh
+        Q_in, K_in, V_in = self.lin_QKV_in(e_ln).chunk(3, dim=-1)
         
         Q_in = Q_in.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
-        K_in = K_in.view(bsize,num_edges,num_edges,self._dot_dim)
-        V_in = V_in.view(bsize,num_edges,num_edges,self._dot_dim)
+        K_in = K_in.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
+        V_in = V_in.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
         
         Q_in = Q_in * self._scale_factor
-        H_in = torch.einsum('bijdh,bjkd->bijkh', Q_in, K_in) + E_in
+        H_in = torch.einsum('bijdh,bjkdh->bijkh', Q_in, K_in)
         
         mask_in = mask.unsqueeze(2)
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,1,num_edges,num_edges,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_in = mask_in + rmask
-        gates_in = torch.sigmoid(G_in+mask_in)
-        A_in = torch.softmax(H_in+mask_in, dim=3) * gates_in
+        A_in = torch.softmax(H_in+mask_in, dim=3)
+        if self.attention_dropout > 0:
+            A_in = F.dropout(A_in, p=self.attention_dropout,
+                             training=self.training, inplace=True)
         
-        Va_in = torch.einsum('bijkh,bjkd->bijdh', A_in, V_in)
+        Va_in = torch.einsum('bijkh,bjkdh->bijdh', A_in, V_in)
         
-        Q_out = self.lin_Q_out(e_ln)
-        K_out, V_out = self.lin_KV_out(e_ln).chunk(2, dim=-1)
-        E_out, G_out = self.lin_EG_out(e_ln).unsqueeze(3).chunk(2, dim=-1) # bki1h
+        Q_out, K_out, V_out = self.lin_QKV_out(e_ln).chunk(3, dim=-1)
         
         Q_out = Q_out.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
-        K_out = K_out.view(bsize,num_edges,num_edges,self._dot_dim)
-        V_out = V_out.view(bsize,num_edges,num_edges,self._dot_dim)
+        K_out = K_out.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
+        V_out = V_out.view(bsize,num_edges,num_edges,self._dot_dim,self.num_heads)
         
         Q_out = Q_out * self._scale_factor
-        H_out = torch.einsum('bijdh,bkjd->bkijh', Q_out, K_out) + E_out
+        H_out = torch.einsum('bijdh,bkjdh->bkijh', Q_out, K_out)
         
         mask_out = mask.unsqueeze(3)
-        if self.source_dropout > 0 and self.training:
-            rmask = e.new_empty(size=[bsize,num_edges,1,num_edges,1])\
-                     .bernoulli_(self.source_dropout)\
-                         * torch.finfo(mask.dtype).min
-            mask_out = mask_out + rmask
-        gates_out = torch.sigmoid(G_out+mask_out)
-        A_out = torch.softmax(H_out+mask_out, dim=1) * gates_out
+        A_out = torch.softmax(H_out+mask_out, dim=1)
+        if self.attention_dropout > 0:
+            A_out = F.dropout(A_out, p=self.attention_dropout,
+                              training=self.training, inplace=True)
         
-        Va_out = torch.einsum('bkijh,bkjd->bijdh', A_out, V_out)
+        Va_out = torch.einsum('bkijh,bkjdh->bijdh', A_out, V_out)
         
         Va = torch.cat([Va_in, Va_out], dim=-1).view(bsize,num_edges,num_edges,embed_dim*2)
         e = self.lin_O(Va)
         return e
+

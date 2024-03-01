@@ -3,20 +3,17 @@ import numpy as np
 import torch.nn.functional as F
 
 from lib.training.hyperdict import HDict
-from lib.models.pcqm.multitask import EGT_Multi
+from lib.models.pcqm.multitask import TGT_Multi
 from lib.data.pcqm import data
 from lib.data.pcqm.structural_transform import AddStructuralData
-from ..egt_training import EGTTraining
+from ..tgt_training import TGTTraining
 from ..commons import DiscreteDistLoss, add_coords_noise, coords2dist
 
-class SCHEME(EGTTraining):
+class SCHEME(TGTTraining):
     def get_default_config(self):
         config_dict = super().get_default_config()
         config_dict.update(
-            save_path_prefix    = 'models/pcqm_pretrain',
-            dataset_path        = 'data/PCQM',
-            prediction_samples  = 1,
-            predict_in_train    = HDict.L(lambda c: c.prediction_samples > 1),
+            save_path_prefix    = HDict.L(lambda c: 'models/pcqm/pretrain' if c.model_prefix is None else f'models/pcqm/{c.model_prefix}/pretrain'),
             coords_noise        = 0.5,
             coords_noise_smooth = 1.0,
             embed_3d_type       = 'gaussian',
@@ -58,7 +55,7 @@ class SCHEME(EGTTraining):
         model_config.update(
             num_dist_bins = self.config.num_dist_bins,
         )
-        return model_config, EGT_Multi
+        return model_config, TGT_Multi
     
     def preprocess_batch(self, batch, training):
         batch = super().preprocess_batch(batch, training)
@@ -94,7 +91,7 @@ class SCHEME(EGTTraining):
     def prediction_step(self, batch):
         gap_pred = None
         dist_probs = None
-        nb_samples = self.config.prediction_samples
+        nb_samples = self.nb_draw_samples
         valid_samples = 0
         for _ in range(nb_samples*2):
             new_gap_pred, new_dist_logits = self.model(batch)

@@ -1,1 +1,0 @@
-from .layers import EGT_Layer

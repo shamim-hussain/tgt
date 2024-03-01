@@ -8,42 +8,52 @@ import torch
 from lib.data.dataset import padded_collate
 
 
-class EGTTraining(LinearLRWarmupCosineDecay,MonitorBest,TestingBase,TrainingBase):
+class TGTTraining(LinearLRWarmupCosineDecay,MonitorBest,TestingBase,TrainingBase):
     def get_default_config(self):
         config = super().get_default_config()
         config.update(
-            model_name              = 'egt'     ,
-            model_height            = 4         ,
-            node_width              = 64        ,
-            edge_width              = 8         ,
-            num_heads               = 8         ,
-            node_act_dropout        = 0.        ,
-            edge_act_dropout        = 0.        ,
-            source_dropout          = 0.        ,
-            drop_path               = 0.        ,
-            activation              = 'gelu'    ,
-            scale_degree            = True      ,
-            node_ffn_multiplier     = 1.        ,
-            edge_ffn_multiplier     = 1.        ,
-            layer_multiplier        = 1         ,
-            upto_hop                = 32        ,
-            triangle_heads          = 0         ,
-            triangle_type           = 'update'  ,
-            triangle_dropout        = 0         ,
+            model_name              = 'tgt'        ,
+            model_prefix            = None         ,
+            save_path_prefix        = HDict.L(lambda c: 'models/pcqm' if c.model_prefix is None else f'models/pcqm/{c.model_prefix}'),
+            dataset_path            = 'data/PCQM'  ,
+            model_height            = 4            ,
+            node_width              = 64           ,
+            edge_width              = 8            ,
+            num_heads               = 8            ,
+            node_act_dropout        = 0.           ,
+            edge_act_dropout        = 0.           ,
+            source_dropout          = 0.           ,
+            drop_path               = 0.           ,
+            activation              = 'gelu'       ,
+            scale_degree            = True         ,
+            node_ffn_multiplier     = 1.           ,
+            edge_ffn_multiplier     = 1.           ,
+            layer_multiplier        = 1            ,
+            upto_hop                = 32           ,
+            triplet_heads           = 0            ,
+            triplet_type            = 'aggregate'  ,
+            triplet_dropout         = 0            ,
             
-            embed_3d_type           = 'gaussian',
-            num_3d_kernels          = 128       ,
+            embed_3d_type           = 'gaussian'   ,
+            num_3d_kernels          = 128          ,
             
-            allocate_max_batch      = True      ,
-            save_all_checkpoints    = True      ,
-            predict_on              = ['val']   ,
-            num_epochs              = 1000      ,
-            pretrained_weights_file = None      ,
+            evaluation_samples      = 10           ,
+            prediction_samples      = 10           ,
+            predict_in_train        = True         ,
+            
+            allocate_max_batch      = True         ,
+            save_all_checkpoints    = True         ,
+            predict_on              = ['val']      ,
+            pretrained_weights_file = None         ,
         )
         return config
     
     def __post_init__(self):
         self._nan_loss_count = 0
+        
+        self.nb_draw_samples = self.config.prediction_samples \
+                               if self.executing_command == 'predict'\
+                                  else self.config.evaluation_samples
     
     def get_dataset_config(self, split):
         if self.is_distributed and split == 'train':
@@ -72,9 +82,9 @@ class EGTTraining(LinearLRWarmupCosineDecay,MonitorBest,TestingBase,TrainingBase
             edge_ffn_multiplier = config.edge_ffn_multiplier         ,
             layer_multiplier    = config.layer_multiplier            ,
             upto_hop            = config.upto_hop                    ,
-            triangle_heads      = config.triangle_heads              ,
-            triangle_type       = config.triangle_type               ,
-            triangle_dropout    = config.triangle_dropout            ,
+            triplet_heads       = config.triplet_heads               ,
+            triplet_type        = config.triplet_type                ,
+            triplet_dropout     = config.triplet_dropout             ,
             
             num_3d_kernels      = config.num_3d_kernels              ,
             embed_3d_type       = config.embed_3d_type               ,

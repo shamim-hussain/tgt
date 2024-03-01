@@ -28,7 +28,7 @@ COMMANDS = {
     'evaluate': 'do_evaluations',
 }
 
-DEFAULT_CONFIG_FILE = 'config_input.yaml'
+DEFAULT_CONFIG_FILE = 'config.yaml'
 
 def get_configs_from_args(args):
     config = {}
@@ -39,7 +39,7 @@ def get_configs_from_args(args):
             config.update(cfg.read_config_from_file(args[0]))
             args = args[1:]
         elif os.path.isdir(args[0]):
-            config_path = os.path.join(args[0], 'config_input.yaml')
+            config_path = os.path.join(args[0], DEFAULT_CONFIG_FILE)
             config.update(cfg.read_config_from_file(config_path))
             args = args[1:]
         
