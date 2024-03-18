@@ -3,6 +3,8 @@
 <a href="https://arxiv.org/abs/2402.04538"><img src="https://img.shields.io/badge/arXiv-2402.04538-b31b1b.svg"/></a>
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/triplet-interaction-improves-graph/graph-regression-on-pcqm4mv2-lsc)](https://paperswithcode.com/sota/graph-regression-on-pcqm4mv2-lsc?p=triplet-interaction-improves-graph)
 
+![Banner](banner.png)
+
 ## News
 
 - **03/18/2024** We have added the data preparation scripts (in the `lib/data/pcqm` directory) which should help elucidate the data preparation process. We also added simplified instructions for inference.
