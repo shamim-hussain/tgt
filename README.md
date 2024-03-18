@@ -2,6 +2,8 @@
 
 ## News
 
+- **03/18/2024** We have added the data preparation scripts (in the `lib/data/pcqm` directory) which should help elucidate the data preparation process. We also added simplified instructions for inference.
+
 - **02/29/2024** We have released the model weights for the best-performing model (TGT-At) and also a lightweight model (TGT-Agx2) for the PCQM4Mv2 dataset. The weights can be found at <https://huggingface.co/shamim-hussain/tgt> and can be used for inference and transfer learning. We have also updated and added the config files for the training and inference of these models. The code has also been cleaned and updated.
 - **02/09/2024** The preprint of our paper ["Triplet Interaction Improves Graph Transformers: Accurate Molecular Graph Learning with Triplet Graph Transformers"](https://arxiv.org/abs/2402.04538) is now available on ArXiv. We will include our new results, methods, along with model weights soon.
 
@@ -39,9 +41,37 @@ The preprocessed data is available at <https://huggingface.co/datasets/shamim-hu
 bash download_data.sh
 ```
 
+#### (Alternative) Prepare the Data from Scratch
+
+To prepare the data from scratch, you can run the following commands:
+
+```
+# Prepare data except for the RDKit coordinates
+python -m lib.data.pcqm.prepare_data
+
+# Prepare RDKit coordinates
+python -m lib.data.pcqm.prepare_rdkit_coords
+```
+
+The above scripts will create the `parquet` and `npz` files in the `data/PCQM` directory. The `prepare_rdkit_coords` script will create the `rdkit_coords.parquet` file in the same directory. Since preparation of the RDKit coordinates can be time-consuming, we have provided a separate script for this. Also, you may refer to these scripts (in the `lib/data/pcqm` directory) for the details of the data preparation process.
+
 ## Downloading the Model Weights
 
 The model weights are available at <https://huggingface.co/shamim-hussain/tgt>. You may directly copy the models directory from the huggingface repository. The raw weights are contained in the model_state.pt files in the checkpoint directories.
+
+## Run Evaluation (Inference) Only
+
+1. Download the data and model weights as described above.
+2. Make distance predictions (on the training and validation sets by default)
+    ```
+    python make_predictions.py configs/pcqm/tgt_at_200m/pcqm_dist_pred/tgt_at_100m_rdkit.yaml
+    ```
+    This will create a `predictions` directory (e.g. `bins50`) in the model directory, containing the predictions for the training and validation sets. To reduce the number of distance samples (and thus save time and disk space) add the following argument `'prediction_samples: 10'` (we used 50 samples, you can increase it during the final inference to get better results).
+3. Final evaluation:
+    ```
+    python do_evaluations.py configs/pcqm/tgt_at_200m/pcqm_gap_pred/tgt_at_100m_rdkit.yaml
+    ```
+    the results will be printed to the console and also saved in the predictions directory
 
 ## Run Training and Evaluations
 
