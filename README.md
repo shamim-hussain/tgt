@@ -85,7 +85,7 @@ Config files for the results can be found in the configs directory. Examples:
 
 ```
 python run_training.py configs/pcqm/tgt_at_200m/pcqm_finetune/tgt_at_100m_rdkit.yaml
-python run_training.py 'scheme: pcqm_dist_pred' 'model_height: 6'
+python run_training.py 'scheme: pcqm.dist_pred' 'model_height: 6'
 python make_predictions.py configs/pcqm/tgt_at_200m/pcqm_dist_pred/tgt_at_100m_rdkit.yaml 'predict_on: ["train", "val"]'
 ```
 
