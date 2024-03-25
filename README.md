@@ -67,6 +67,8 @@ The model weights are available at <https://huggingface.co/shamim-hussain/tgt>. 
 
 ## Run Evaluation (Inference) Only on Validation Set
 
+An example Jupyter Notebook for inference is [here](inference_example.ipynb). You can also follow these instructions to perform inference on the validation set:
+
 1. Download the data and model weights as described above.
 2. Make distance predictions (on the training and validation sets by default)
     ```
