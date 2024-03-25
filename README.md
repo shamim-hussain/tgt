@@ -70,12 +70,12 @@ The model weights are available at <https://huggingface.co/shamim-hussain/tgt>. 
 1. Download the data and model weights as described above.
 2. Make distance predictions (on the training and validation sets by default)
     ```
-    python make_predictions.py configs/pcqm/tgt_at_200m/pcqm_dist_pred/tgt_at_100m_rdkit.yaml
+    python make_predictions.py configs/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit.yaml
     ```
     This will create a `predictions` directory (e.g. `bins50`) in the model directory, containing the predictions for the training and validation sets. To reduce the number of distance samples (and thus save time and disk space) add the following argument `'prediction_samples: 10'` (we used 50 samples, you can increase it during the final inference to get better results).
 3. Final evaluation:
     ```
-    python do_evaluations.py configs/pcqm/tgt_at_200m/pcqm_gap_pred/tgt_at_100m_rdkit.yaml
+    python do_evaluations.py configs/pcqm/tgt_at_200m/gap_pred/tgt_at_tp_rdkit.yaml
     ```
     the results will be printed to the console and also saved in the predictions directory
 
@@ -90,9 +90,9 @@ You can specify the training/prediction/evaluation configurations by creating a 
 Config files for the results can be found in the configs directory. Examples:
 
 ```
-python run_training.py configs/pcqm/tgt_at_200m/pcqm_finetune/tgt_at_100m_rdkit.yaml
+python run_training.py configs/pcqm/tgt_at_200m/finetune/tgt_at_dp_rdkit.yaml
 python run_training.py 'scheme: pcqm.dist_pred' 'model_height: 6'
-python make_predictions.py configs/pcqm/tgt_at_200m/pcqm_dist_pred/tgt_at_100m_rdkit.yaml 'predict_on: ["train", "val"]'
+python make_predictions.py configs/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit.yaml 'predict_on: ["train", "val"]'
 ```
 
 ### Triplet Interaction Type
@@ -107,10 +107,10 @@ As mentioned before, the training is carried out in stages. Here is an example o
 
 ```
 # Stage 1 - Train the distance predictor
-python run_training.py configs/pcqm/tgt_at_200m/pcqm_dist_pred/tgt_at_100m_rdkit.yaml
+python run_training.py configs/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit.yaml
 
 # Make distance predictions (on the training and validation sets by default)
-python make_predictions.py configs/pcqm/tgt_at_200m/pcqm_dist_pred/tgt_at_100m_rdkit.yaml
+python make_predictions.py configs/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit.yaml
 
 # this will create a 'predictions' directory (e.g. bins50) in the model directory, containing the predictions for the training and validation sets
 # to reduce the number of distance samples (and thus save time and disk space)
@@ -120,31 +120,31 @@ python make_predictions.py configs/pcqm/tgt_at_200m/pcqm_dist_pred/tgt_at_100m_r
 
 
 # Stage 2 - Pretrain the gap predictor with noisy coordinates
-python run_training.py configs/pcqm/tgt_at_200m/pcqm_pretrain/tgt_at_100m.yaml
+python run_training.py configs/pcqm/tgt_at_200m/pretrain/tgt_at_tp.yaml
 
 # this will create a 'checkpoint' directory in the model directory
 # the model_state.pt file in the last checkpoint will be used for the next stage
 
 
 # Stage 3 - Fine-tune the gap predictor with predicted distances
-python run_training.py configs/pcqm/tgt_at_200m/pcqm_finetune/tgt_at_100m_rdkit.yaml
+python run_training.py configs/pcqm/tgt_at_200m/finetune/tgt_at_tp_rdkit.yaml
 
 # make sure that the 'bins_input_path' points to the correct distance predictions,
-# e.g., 'models/pcqm_dist_pred/tgt_at_100m_rdkit/predictions/bins50'
+# e.g., 'models/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit/predictions/bins50'
 # and the 'pretrained_weights_file' points to the correct pretrained checkpoint,
-# e.g., 'models/pcqm_pretrain/tgt_at_100m/checkpoint/model_state.pt'
+# e.g., 'models/pcqm/tgt_at_200m/pretrain/tgt_at_tp/checkpoint/model_state.pt'
 
 
 # Stage 4 - Do final evaluation (and trim the model by removing the denoising head)
-python run configs/pcqm/tgt_at_200m/pcqm_gap_pred/tgt_at_100m_rdkit.yaml
+python run configs/pcqm/tgt_at_200m/gap_pred/tgt_at_tp_rdkit.yaml
 
 # make sure the 'pretrained_weights_file' points to the correct checkpoint from the finetuning stage,
-# e.g., 'models/pcqm_finetune/tgt_at_100m_rdkit/checkpoint/model_state.pt'
+# e.g., 'models/pcqm/tgt_at_200m/finetune/tgt_at_tp_rdkit/checkpoint/model_state.pt'
 # this does not really do any training, but it will create a 'checkpoint' directory
 # in the model directory, containing the final checkpoint, without the denoising head
 
 # Final evaluation:
-python do_evaluations.py configs/pcqm/tgt_at_200m/pcqm_gap_pred/tgt_at_100m_rdkit.yaml
+python do_evaluations.py configs/pcqm/tgt_at_200m/gap_pred/tgt_at_tp_rdkit.yaml
 
 # the results will be printed to the console and also saved in the predictions directory
 # in case of the test-dev split it will also create as submission file in the model directory
