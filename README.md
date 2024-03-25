@@ -8,6 +8,8 @@
 
 ## News
 
+- **03/25/2024** We have added [this notebook](inference_example.ipynb) to further simplify the inference process. Also, some errors in the instructions below (wrong script names) were found and corrected.
+
 - **03/18/2024** We have added the data preparation scripts (in the `lib/data/pcqm` directory) which should help elucidate the data preparation process. We also added simplified instructions for inference.
 
 - **02/29/2024** We have released the model weights for the best-performing model (TGT-At) and also a lightweight model (TGT-Agx2) for the PCQM4Mv2 dataset. The weights can be found at <https://huggingface.co/shamim-hussain/tgt> and can be used for inference and transfer learning. We have also updated and added the config files for the training and inference of these models. The code has also been cleaned and updated.
@@ -63,7 +65,7 @@ The above scripts will create the `parquet` and `npz` files in the `data/PCQM` d
 
 ## Downloading the Model Weights
 
-The model weights are available at <https://huggingface.co/shamim-hussain/tgt>. You may directly copy the models directory from the huggingface repository. The raw weights are contained in the model_state.pt files in the checkpoint directories.
+The model weights are available at <https://huggingface.co/shamim-hussain/tgt>. You may directly copy the models directory from the huggingface repository. You must maintain the directory structure, e.g., `models/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit/checkpoint/model_state.pt`. The raw weights are contained in the `model_state.pt` files in the checkpoint directories.
 
 ## Run Evaluation (Inference) Only on Validation Set
 
