@@ -70,12 +70,12 @@ The model weights are available at <https://huggingface.co/shamim-hussain/tgt>. 
 An example Jupyter Notebook for inference is [here](inference_example.ipynb). You can also follow these instructions to perform inference on the validation set:
 
 1. Download the data and model weights as described above.
-2. Make distance predictions (on the training and validation sets by default)
+2. Make distance predictions on the validation set
     ```
     python make_predictions.py configs/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit.yaml 'predict_on: ["val"]'
     ```
     This will create a `predictions` directory (e.g. `bins50`) in the model directory, containing the predictions for the training and validation sets. To reduce the number of distance samples (and thus save time and disk space) add the following argument `'prediction_samples: 10'` (we used 50 samples, you can increase it during the final inference to get better results).
-3. Final evaluation:
+3. Final evaluation (on the validation set):
     ```
     python do_evaluations.py configs/pcqm/tgt_at_200m/gap_pred/tgt_at_tp_rdkit.yaml 'predict_on: ["val"]'
     ```
