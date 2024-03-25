@@ -65,17 +65,17 @@ The above scripts will create the `parquet` and `npz` files in the `data/PCQM` d
 
 The model weights are available at <https://huggingface.co/shamim-hussain/tgt>. You may directly copy the models directory from the huggingface repository. The raw weights are contained in the model_state.pt files in the checkpoint directories.
 
-## Run Evaluation (Inference) Only
+## Run Evaluation (Inference) Only on Validation Set
 
 1. Download the data and model weights as described above.
 2. Make distance predictions (on the training and validation sets by default)
     ```
-    python make_predictions.py configs/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit.yaml
+    python make_predictions.py configs/pcqm/tgt_at_200m/dist_pred/tgt_at_dp_rdkit.yaml 'predict_on: ["val"]'
     ```
     This will create a `predictions` directory (e.g. `bins50`) in the model directory, containing the predictions for the training and validation sets. To reduce the number of distance samples (and thus save time and disk space) add the following argument `'prediction_samples: 10'` (we used 50 samples, you can increase it during the final inference to get better results).
 3. Final evaluation:
     ```
-    python do_evaluations.py configs/pcqm/tgt_at_200m/gap_pred/tgt_at_tp_rdkit.yaml
+    python do_evaluations.py configs/pcqm/tgt_at_200m/gap_pred/tgt_at_tp_rdkit.yaml 'predict_on: ["val"]'
     ```
     the results will be printed to the console and also saved in the predictions directory
 
