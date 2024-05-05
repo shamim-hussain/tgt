@@ -8,6 +8,8 @@
 
 ## News
 
+- **05/05/2024** Our [paper](https://arxiv.org/abs/2402.04538) has been accepted in ICML'24. The manuscript on ArXiv will soon be updated with the revised version.
+
 - **03/25/2024** We have added [this notebook](inference_example.ipynb) to further simplify the inference process. Also, some errors in the instructions below (wrong script names) were found and corrected.
 
 - **03/18/2024** We have added the data preparation scripts (in the `lib/data/pcqm` directory) which should help elucidate the data preparation process. We also added simplified instructions for inference.
