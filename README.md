@@ -142,7 +142,7 @@ python run_training.py configs/pcqm/tgt_at_200m/finetune/tgt_at_tp_rdkit.yaml
 
 
 # Stage 4 - Do final evaluation (and trim the model by removing the denoising head)
-python run configs/pcqm/tgt_at_200m/gap_pred/tgt_at_tp_rdkit.yaml
+python run_training.py configs/pcqm/tgt_at_200m/gap_pred/tgt_at_tp_rdkit.yaml
 
 # make sure the 'pretrained_weights_file' points to the correct checkpoint from the finetuning stage,
 # e.g., 'models/pcqm/tgt_at_200m/finetune/tgt_at_tp_rdkit/checkpoint/model_state.pt'
