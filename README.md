@@ -8,6 +8,8 @@
 
 ## News
 
+- **06/11/2024** The [paper](https://arxiv.org/abs/2402.04538) has been updated with the ICML'24 accepted version. Visit [https://arxiv.org/abs/2402.04538](https://arxiv.org/abs/2402.04538) for the latest revision.
+
 - **05/05/2024** Our [paper](https://arxiv.org/abs/2402.04538) has been accepted in ICML'24. The manuscript on ArXiv will soon be updated with the revised version.
 
 - **03/25/2024** We have added [this notebook](inference_example.ipynb) to further simplify the inference process. Also, some errors in the instructions below (wrong script names) were found and corrected.
