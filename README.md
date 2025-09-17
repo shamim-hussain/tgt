@@ -1,8 +1,6 @@
 # Triplet Graph Transformers (Edge-augmented Graph Transformer with Triplet Interaction)
 
 <a href="https://arxiv.org/abs/2402.04538"><img src="https://img.shields.io/badge/arXiv-2402.04538-b31b1b.svg" alt="badge-arxiv"/></a>
-[![badge-pcqm4m](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/triplet-interaction-improves-graph/graph-regression-on-pcqm4mv2-lsc)](https://paperswithcode.com/sota/graph-regression-on-pcqm4mv2-lsc?p=triplet-interaction-improves-graph)
-[![badge-oc20](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/triplet-interaction-improves-graph/initial-structure-to-relaxed-energy-is2re)](https://paperswithcode.com/sota/initial-structure-to-relaxed-energy-is2re?p=triplet-interaction-improves-graph)
 
 ![Banner](banner.png)
 
